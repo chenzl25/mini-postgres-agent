@@ -32,10 +32,10 @@ The agent understands natural language. Try these examples:
 You: What tables are in the database?
 Agent: [Lists all tables]
 
-You: Show me the structure of the users table
+You: Show me the structure of the orders table
 Agent: [Shows table columns and types]
 
-You: How many orders were placed last month?
+You: How many orders in the table
 Agent: [Executes query and shows results]
 ```
 
