@@ -3,6 +3,8 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, DB_CONFIG
 import json
 from typing import List, Dict
+from datetime import datetime, date, time
+from decimal import Decimal
 
 class DatabaseAgent:
     def __init__(self):
@@ -41,6 +43,20 @@ class DatabaseAgent:
             print(f"Error connecting to the database: {e}")
             raise
 
+    def serialize_value(self, value):
+        """Serialize different types of values to JSON-compatible format"""
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        elif isinstance(value, time):
+            return value.strftime('%H:%M:%S')
+        elif isinstance(value, Decimal):
+            return float(value)
+        elif isinstance(value, (list, tuple)):
+            return [self.serialize_value(item) for item in value]
+        elif isinstance(value, dict):
+            return {k: self.serialize_value(v) for k, v in value.items()}
+        return value
+
     def execute_query(self, query):
         """Execute a SQL query and return the results"""
         try:
@@ -49,10 +65,15 @@ class DatabaseAgent:
             if cursor.description:  # If the query returns data
                 columns = [desc[0] for desc in cursor.description]
                 results = cursor.fetchall()
+                # Serialize each row of results
+                serialized_results = [
+                    [self.serialize_value(value) for value in row]
+                    for row in results
+                ]
                 cursor.close()
                 return json.dumps({
                     "columns": columns,
-                    "results": [list(row) for row in results]
+                    "results": serialized_results
                 })
             else:  # If the query doesn't return data (e.g., INSERT, UPDATE)
                 self.db_connection.commit()
